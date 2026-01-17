@@ -1,0 +1,182 @@
+/* Basic Setup */
+:root {
+    --neon-blue: #00f3ff;
+    --neon-pink: #ff0055;
+    --bg-dark: #0a0a0a;
+    --panel-bg: rgba(20, 20, 20, 0.85);
+}
+
+body {
+    margin: 0;
+    background: var(--bg-dark);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    color: white;
+}
+
+/* App HUD */
+.game-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem;
+    text-align: center;
+    pointer-events: none;
+    /* Click through to canvas */
+    z-index: 100;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent);
+}
+
+.neon-text {
+    font-size: 2.5rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: #fff;
+    text-shadow:
+        0 0 5px #fff,
+        0 0 10px #fff,
+        0 0 20px var(--neon-blue),
+        0 0 40px var(--neon-pink);
+}
+
+.status-bar {
+    margin-top: 10px;
+    pointer-events: auto;
+    /* Buttons need pointer events */
+    display: flex;
+    justify-content: center;
+}
+
+.winner-display {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    background: rgba(0, 255, 0, 0.1);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid #0f0;
+}
+
+.blink {
+    animation: blinker 1s linear infinite;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #0f0;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
+}
+
+.restart-btn {
+    background: transparent;
+    border: 1px solid #0f0;
+    color: #0f0;
+    padding: 5px 15px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.restart-btn:hover {
+    background: #0f0;
+    color: #000;
+}
+
+.turn-badge {
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    background: #222;
+    border: 2px solid #555;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}
+
+.badge-x {
+    color: var(--neon-pink);
+    border-color: var(--neon-pink);
+    box-shadow: 0 0 15px rgba(255, 0, 85, 0.3);
+}
+
+.badge-o {
+    color: var(--neon-blue);
+    border-color: var(--neon-blue);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+}
+
+/* Control Panel Inputs */
+.control-panel {
+    background: var(--panel-bg);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #333;
+    backdrop-filter: blur(5px);
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    min-width: 200px;
+}
+
+.control-panel h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #aaa;
+    text-transform: uppercase;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+}
+
+input[type=range] {
+    width: 100%;
+    margin-top: 5px;
+    cursor: pointer;
+}
+
+.fire-btn {
+    background: linear-gradient(45deg, #222, #444);
+    color: white;
+    border: 1px solid #555;
+    padding: 10px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: all 0.2s;
+}
+
+.fire-btn:active {
+    transform: scale(0.95);
+}
+
+.control-left .fire-btn {
+    border-color: var(--neon-pink);
+    color: var(--neon-pink);
+}
+
+.control-right .fire-btn {
+    border-color: var(--neon-blue);
+    color: var(--neon-blue);
+}
+
+.control-left .fire-btn:hover {
+    background: var(--neon-pink);
+    color: white;
+}
+
+.control-right .fire-btn:hover {
+    background: var(--neon-blue);
+    color: white;
+}

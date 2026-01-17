@@ -1,0 +1,108 @@
+.game-layout-unified {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    background: #111;
+}
+
+.layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    /* Let clicks pass through by default */
+}
+
+.physics-layer {
+    z-index: 1;
+    /* Canvas inside Arena should have pointer-events auto if needed, but mostly controlled via overlay */
+}
+
+/* Arena specific */
+.pinball-arena {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.scene-layer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
+
+.scene-layer canvas {
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+    border-radius: 12px;
+    background: radial-gradient(circle at center, #222 0%, #111 80%);
+}
+
+/* UI Layers */
+.ui-layer-center {
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 50px;
+    /* Offset to not cover funnels completely? */
+}
+
+.ui-layer-top {
+    z-index: 10;
+    height: auto;
+    pointer-events: auto;
+}
+
+/* Controls Overlay in Arena */
+.controls-overlay {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: auto;
+    padding: 20px;
+    width: 250px;
+}
+
+.control-left {
+    left: 20px;
+}
+
+.control-right {
+    right: 20px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 800px) {
+    .controls-overlay {
+        position: fixed;
+        bottom: 0;
+        top: auto;
+        transform: none;
+        width: 100%;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        justify-content: center;
+        border-top: 1px solid #333;
+        padding: 10px;
+        z-index: 20;
+    }
+
+    .control-left,
+    .control-right {
+        left: 0;
+        right: 0;
+    }
+
+    .ui-layer-center {
+        /* Move board up so it doesn't overlap controls */
+        align-items: flex-start;
+        padding-top: 100px;
+        transform: scale(0.8);
+    }
+}
