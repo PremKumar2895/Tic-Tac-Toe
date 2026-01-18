@@ -1,108 +1,83 @@
 .game-layout-unified {
-    position: relative;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    height: 100vh;
-    overflow: hidden;
-    background: #111;
+    height: 100%;
+    align-items: center;
 }
 
-.layer {
+.main-stage {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    width: 1200px;
+    /* Locked width */
+    height: 600px;
+    /* Locked play area height */
+    gap: 1rem;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0;
+}
+
+.side-content {
+    grid-column: span 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.center-game-area {
+    grid-column: span 6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.diagonal-racks-layer {
     position: absolute;
-    top: 0;
+    bottom: 120px;
+    width: 100%;
     left: 0;
-    width: 100%;
-    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 4rem;
     pointer-events: none;
-    /* Let clicks pass through by default */
 }
 
-.physics-layer {
-    z-index: 1;
-    /* Canvas inside Arena should have pointer-events auto if needed, but mostly controlled via overlay */
-}
-
-/* Arena specific */
-.pinball-arena {
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-.scene-layer {
+.diagonal-rack {
+    width: 200px;
+    height: 40px;
+    background: var(--sand);
+    border: 2px solid var(--sand-dark);
+    border-radius: 20px;
     display: flex;
-    justify-content: center;
     align-items: center;
-    height: 100%;
+    padding: 0 10px;
+    box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-.scene-layer canvas {
-    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
-    border-radius: 12px;
-    background: radial-gradient(circle at center, #222 0%, #111 80%);
+.rack-left {
+    transform: rotate(-35deg);
+    justify-content: flex-end;
 }
 
-/* UI Layers */
-.ui-layer-center {
-    z-index: 2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-top: 50px;
-    /* Offset to not cover funnels completely? */
+.rack-right {
+    transform: rotate(35deg);
+    justify-content: flex-start;
 }
 
-.ui-layer-top {
-    z-index: 10;
-    height: auto;
-    pointer-events: auto;
+.rack-ball {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin: 0 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), inset -2px -2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Controls Overlay in Arena */
-.controls-overlay {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: auto;
-    padding: 20px;
-    width: 250px;
+.rack-ball.coral {
+    background: radial-gradient(circle at 30% 30%, #ff9e9e, var(--coral) 60%, #e66a6a);
 }
 
-.control-left {
-    left: 20px;
-}
-
-.control-right {
-    right: 20px;
-}
-
-/* Mobile adjustments */
-@media (max-width: 800px) {
-    .controls-overlay {
-        position: fixed;
-        bottom: 0;
-        top: auto;
-        transform: none;
-        width: 100%;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, 0.9);
-        display: flex;
-        justify-content: center;
-        border-top: 1px solid #333;
-        padding: 10px;
-        z-index: 20;
-    }
-
-    .control-left,
-    .control-right {
-        left: 0;
-        right: 0;
-    }
-
-    .ui-layer-center {
-        /* Move board up so it doesn't overlap controls */
-        align-items: flex-start;
-        padding-top: 100px;
-        transform: scale(0.8);
-    }
+.rack-ball.navy {
+    background: radial-gradient(circle at 30% 30%, #3a568a, var(--navy) 60%, #0d1421);
 }
