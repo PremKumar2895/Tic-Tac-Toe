@@ -57,12 +57,14 @@
 }
 
 .rack-left {
-    transform: rotate(-35deg);
+    --rotation: -35deg;
+    transform: rotate(var(--rotation));
     justify-content: flex-end;
 }
 
 .rack-right {
-    transform: rotate(35deg);
+    --rotation: 35deg;
+    transform: rotate(var(--rotation));
     justify-content: flex-start;
 }
 

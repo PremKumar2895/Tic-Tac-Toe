@@ -23,19 +23,7 @@ const GameLayout = ({ children, turn }) => {
                 </section>
             </main>
 
-            {/* Ball Racks Decoration */}
-            <div className="diagonal-racks-layer">
-                <div className="diagonal-rack rack-left">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="rack-ball coral" />
-                    ))}
-                </div>
-                <div className="diagonal-rack rack-right">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="rack-ball navy" />
-                    ))}
-                </div>
-            </div>
+            {/* <div className="diagonal-racks-layer">Moved to PinballArena</div> */}
 
             {footer}
 

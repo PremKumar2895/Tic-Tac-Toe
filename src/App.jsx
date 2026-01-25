@@ -124,6 +124,24 @@ function App() {
         // Physics state will be cleared by PinballArena internally
     };
 
+    // 5. Miss Timeout / Game Stuck Prevention
+    useEffect(() => {
+        let timeout;
+        if (isLaunching) {
+            timeout = setTimeout(() => {
+                // Ball missed everything or flew out.
+                // Reset launch state. 
+                // Opt: Switch turn? Or let same player try again? 
+                // "ball in play for long time" implies failure.
+                // Let's reset to waiting state, but maybe keep turn?
+                // For game flow, if you miss, you lose turn usually.
+                setIsLaunching(false);
+                setTurn(prev => (prev === 'X' ? 'O' : 'X'));
+            }, 6000); // 6 seconds max flight time
+        }
+        return () => clearTimeout(timeout);
+    }, [isLaunching]);
+
     const handleLaunch = () => {
         if (arenaRef.current && !isLaunching && !winner) {
             setIsLaunching(true);
@@ -183,6 +201,9 @@ function App() {
                 ref={arenaRef}
                 activePlayer={winner ? null : turn}
                 onBasketHit={handleBasketHit}
+                board={board}
+                isLaunching={isLaunching}
+                angle={turn === 'X' ? angleX : angleO}
             />
         </GameLayout>
     );

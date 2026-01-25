@@ -338,5 +338,233 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+    z-index: 1000;
+    /* Ensure ball is on top of everything */
+}
+
+/* Animations for Racks */
+.diagonal-rack {
+    animation: gentle-sway 4s ease-in-out infinite;
+}
+
+.rack-ball {
+    animation: ball-glint 3s infinite alternate;
+}
+
+@keyframes gentle-sway {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(var(--rotation));
+    }
+
+    50% {
+        transform: translateY(-3px) rotate(var(--rotation));
+    }
+}
+
+@keyframes ball-glint {
+    0% {
+        filter: brightness(1);
+    }
+
+    100% {
+        filter: brightness(1.2);
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+}
+
+/* Grid Cells - Missing Styles Added */
+.grid-cell {
+    width: 100px;
+    height: 100px;
+    background: var(--bg-panel);
+    border: 2px solid var(--sand);
+    border-radius: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.05), 0 4px 8px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+}
+
+.cell-symbol {
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.cell-symbol.x {
+    color: var(--coral);
+    text-shadow: 0 4px 0 var(--shadow-coral);
+    animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cell-symbol.o {
+    color: var(--navy);
+    text-shadow: 0 4px 0 var(--shadow-navy);
+    animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop-in {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Basket Visuals */
+.bucket-slot {
+    position: relative;
+    border-right: none;
+}
+
+.bucket-hill-divider {
+    position: absolute;
+    right: -6px;
+    bottom: 0;
+    width: 12px;
+    height: 30px;
+    background: #dccba5;
+    border-radius: 4px 4px 0 0;
+    z-index: 5;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Internal Rack Positioning */
+.diagonal-racks-layer-internal {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    /* Below overlay, above background */
+}
+
+.diagonal-rack {
+    width: 180px;
+    height: 44px;
+    background: var(--sand);
+    border: 2px solid var(--sand-dark);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 20px rgba(0, 0, 0, 0.1);
+    position: absolute;
+    bottom: 20px;
+}
+
+.rack-left-internal {
+    left: -180px;
+    transform: rotate(-30deg);
+    justify-content: flex-end;
+    transform-origin: right bottom;
+}
+
+.rack-right-internal {
+    right: -180px;
+    transform: rotate(30deg);
+    justify-content: flex-start;
+    transform-origin: left bottom;
+}
+
+.rack-ball {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin: 0 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), inset -2px -2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.rack-ball.coral {
+    background: radial-gradient(circle at 30% 30%, #ff9e9e, var(--coral) 60%, #e66a6a);
+}
+
+.rack-ball.navy {
+    background: radial-gradient(circle at 30% 30%, #3a568a, var(--navy) 60%, #0d1421);
+}
+
+/* Waiting Ball Animation */
+.waiting-ball {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    position: absolute;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2), inset -4px -4px 8px rgba(0, 0, 0, 0.2);
+    top: -35px;
     z-index: 10;
+}
+
+/* Position specifically for left/right racks */
+.rack-left-internal .waiting-ball {
+    right: 0;
+}
+
+.rack-right-internal .waiting-ball {
+    left: 0;
+}
+
+.coral-pulse {
+    background: radial-gradient(circle at 30% 30%, #ff9e9e, var(--coral) 60%, #e66a6a);
+    animation: idle-bounce 1s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+}
+
+.navy-pulse {
+    background: radial-gradient(circle at 30% 30%, #3a568a, var(--navy) 60%, #0d1421);
+    animation: idle-bounce 1s infinite alternate cubic-bezier(0.5, 0.05, 1, 0.5);
+}
+
+@keyframes idle-bounce {
+    0% {
+        transform: translateY(0);
+    }
+
+    100% {
+        transform: translateY(-8px);
+    }
+}
+
+.center-marker-line {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: repeating-linear-gradient(to bottom, var(--coral) 0, var(--coral) 4px, transparent 4px, transparent 8px);
+    transform: translateX(-50%);
+    opacity: 0.5;
+}
+
+.bucket-mark {
+    position: absolute;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5rem;
+    font-weight: 900;
+    opacity: 0.8;
+}
+
+.mark-x {
+    color: var(--coral);
+}
+
+.mark-o {
+    color: var(--navy);
+}
+
+.target-dot {
+    width: 6px;
+    height: 6px;
+    background: rgba(44, 37, 32, 0.2);
+    border-radius: 50%;
+    margin-bottom: 20px;
 }
