@@ -1,28 +1,18 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import Matter from 'matter-js';
-
-const ENGINE_OPTIONS = {
-    gravity: { x: 0, y: 1.2 }, // Slightly higher gravity for weight
-    positionIterations: 10,
-    velocityIterations: 10,
-};
-
-const RENDER_OPTIONS = {
-    pixelRatio: window.devicePixelRatio || 1,
-    background: 'transparent',
-    wireframes: false,
-    showAngleIndicator: false,
-};
 
 const BALL_CATEGORY = 0x0001;
 const WALL_CATEGORY = 0x0002;
 const SENSOR_CATEGORY = 0x0004;
 
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
 export const usePinballPhysics = ({
     containerRef,
     width = 1024,
-    height = 140,
+    height = 220,
     onBasketHit,
+    onBallComplete,
     isLeftPlayer
 }) => {
     const engineRef = useRef(null);
@@ -30,248 +20,233 @@ export const usePinballPhysics = ({
     const runnerRef = useRef(null);
     const activeBallRef = useRef(null);
     const callbackRef = useRef(onBasketHit);
+    const completeCallbackRef = useRef(onBallComplete);
+    const playerSideRef = useRef(isLeftPlayer);
+    const scoredBallRef = useRef(new Set());
 
-    // Keep callback fresh
     useEffect(() => {
         callbackRef.current = onBasketHit;
     }, [onBasketHit]);
 
-    // Initialize Physics Engine
     useEffect(() => {
-        if (!containerRef.current) return;
+        completeCallbackRef.current = onBallComplete;
+    }, [onBallComplete]);
 
-        // Module aliases
-        const { Engine, Render, Runner, World, Bodies, Composite, Events, Body } = Matter;
+    useEffect(() => {
+        playerSideRef.current = isLeftPlayer;
+    }, [isLeftPlayer]);
 
-        // 1. Setup Engine
-        const engine = Engine.create(ENGINE_OPTIONS);
-        engineRef.current = engine;
+    const clearBall = useCallback(() => {
+        if (!engineRef.current || !activeBallRef.current) return;
+        Matter.Composite.remove(engineRef.current.world, activeBallRef.current);
+        activeBallRef.current = null;
+    }, []);
 
-        // 2. Setup Render
+    useEffect(() => {
+        if (!containerRef.current || width <= 0 || height <= 0) return;
+
+        const { Engine, Render, Runner, World, Bodies, Composite, Events } = Matter;
+
+        const engine = Engine.create({
+            gravity: { x: 0, y: 1.08 },
+            positionIterations: 8,
+            velocityIterations: 6,
+        });
+
         const render = Render.create({
             element: containerRef.current,
-            engine: engine,
+            engine,
             options: {
-                ...RENDER_OPTIONS,
                 width,
                 height,
-            },
+                background: 'transparent',
+                wireframes: false,
+                showAngleIndicator: false,
+                pixelRatio: 1,
+            }
         });
+
+        engineRef.current = engine;
         renderRef.current = render;
 
-        // 3. Create Static World Bounds
-        // Floor
-        const floor = Bodies.rectangle(width / 2, height + 20, width, 40, {
-            isStatic: true,
-            friction: 0.5,
-            collisionFilter: { category: WALL_CATEGORY },
-            render: { visible: false }
-        });
-
-        // Walls
-        const leftWall = Bodies.rectangle(-20, height / 2, 40, height * 2, {
-            isStatic: true,
-            collisionFilter: { category: WALL_CATEGORY },
-            render: { visible: false }
-        });
-        const rightWall = Bodies.rectangle(width + 20, height / 2, 40, height * 2, {
-            isStatic: true,
-            collisionFilter: { category: WALL_CATEGORY },
-            render: { visible: false }
-        });
-
-        // 4. Create "Hills" / Separation between buckets
-        // To make the pinball "bounce" on the marked elements as requested, 
-        // we need physical geometry instead of thin lines.
-        // We will create triangular/rounded dividers between the 9 buckets.
+        const gaugeHeight = 80;
+        const baseY = height - gaugeHeight;
         const bucketWidth = width / 9;
+        const basketY = baseY + gaugeHeight - 12;
+
+        const floor = Bodies.rectangle(width / 2, height + 25, width + 120, 50, {
+            isStatic: true,
+            friction: 0.6,
+            restitution: 0.1,
+            collisionFilter: { category: WALL_CATEGORY },
+            render: { visible: false },
+        });
+
+        const leftWall = Bodies.rectangle(-28, height / 2, 56, height * 2, {
+            isStatic: true,
+            collisionFilter: { category: WALL_CATEGORY },
+            render: { visible: false },
+        });
+
+        const rightWall = Bodies.rectangle(width + 28, height / 2, 56, height * 2, {
+            isStatic: true,
+            collisionFilter: { category: WALL_CATEGORY },
+            render: { visible: false },
+        });
+
+        const topBoundary = Bodies.rectangle(width / 2, -20, width + 80, 40, {
+            isStatic: true,
+            collisionFilter: { category: WALL_CATEGORY },
+            render: { visible: false },
+        });
+
         const bucketSeparators = [];
-
-        // We need 8 separators between the 9 buckets
-        for (let i = 1; i < 9; i++) {
+        for (let i = 1; i < 9; i += 1) {
             const x = i * bucketWidth;
-            // A small triangle/hill at the bottom
-            const separatorHeight = 30;
-            const separatorWidth = 12;
-
-            // Create a chamfered rectangle or polygon for better bouncing
-            const separator = Bodies.trapezoid(x, height - separatorHeight / 2, separatorWidth, separatorHeight, 0.4, {
+            const separator = Bodies.trapezoid(x, baseY + gaugeHeight - 14, 14, 28, 0.38, {
                 isStatic: true,
-                render: {
-                    fillStyle: '#DCCBA5',
-                    opacity: 0.0, // We will draw this via CSS/HTML mostly, but physics needs to be there
-                    visible: false // Hiding widely to rely on DOM visual overlay if desired, but user asked for bounce.
-                    // I'll make it invisible physics body and let visual layer handle looks.
-                },
                 chamfer: { radius: 2 },
-                friction: 0.0,
-                restitution: 0.8, // Bouncy!
-                collisionFilter: { category: WALL_CATEGORY }
+                friction: 0.02,
+                restitution: 0.68,
+                collisionFilter: { category: WALL_CATEGORY },
+                render: { visible: false }
             });
             bucketSeparators.push(separator);
         }
 
-        // 5. Create Sensors (Buckets)
-        // Placed strictly between the separators
         const sensors = [];
-        for (let i = 0; i < 9; i++) {
+        for (let i = 0; i < 9; i += 1) {
             const x = (i * bucketWidth) + (bucketWidth / 2);
-            const sensor = Bodies.rectangle(x, height - 10, bucketWidth - 10, 20, {
+            const sensor = Bodies.rectangle(x, basketY, bucketWidth - 12, 22, {
                 isStatic: true,
                 isSensor: true,
                 label: `basket-${i}`,
                 collisionFilter: { category: SENSOR_CATEGORY },
-                render: {
-                    visible: false,
-                    fillStyle: 'rgba(255, 0, 0, 0.2)' // Debug
-                }
+                render: { visible: false }
             });
             sensors.push(sensor);
         }
 
-        Composite.add(engine.world, [floor, leftWall, rightWall, ...bucketSeparators, ...sensors]);
+        Composite.add(engine.world, [floor, leftWall, rightWall, topBoundary, ...bucketSeparators, ...sensors]);
 
-        // 6. Collision Handling
-        Events.on(engine, 'collisionStart', (event) => {
-            const pairs = event.pairs;
-            pairs.forEach((pair) => {
+        const onCollisionStart = (event) => {
+            event.pairs.forEach((pair) => {
                 const { bodyA, bodyB } = pair;
+                const ball = bodyA.label === 'ball' ? bodyA : (bodyB.label === 'ball' ? bodyB : null);
+                const sensor = typeof bodyA.label === 'string' && bodyA.label.startsWith('basket-')
+                    ? bodyA
+                    : (typeof bodyB.label === 'string' && bodyB.label.startsWith('basket-') ? bodyB : null);
 
-                // Identify ball and sensor
-                let ball = null;
-                let sensor = null;
+                if (!ball || !sensor || ball !== activeBallRef.current) return;
+                if (scoredBallRef.current.has(ball.id)) return;
 
-                if (bodyA.label === 'ball') ball = bodyA;
-                else if (bodyB.label === 'ball') ball = bodyB;
+                scoredBallRef.current.add(ball.id);
 
-                if (bodyA.label.startsWith('basket-')) sensor = bodyA;
-                else if (bodyB.label.startsWith('basket-')) sensor = bodyB;
+                const bucketIndex = Number.parseInt(sensor.label.replace('basket-', ''), 10);
+                callbackRef.current?.(bucketIndex);
 
-                if (ball && sensor && ball === activeBallRef.current) {
-
-                    const bucketIndex = parseInt(sensor.label.split('-')[1], 10);
-
-                    // Trigger callback
-                    if (callbackRef.current) {
-                        callbackRef.current(bucketIndex);
-                    }
-
-                    // Remove ball after a tiny delay or immediately
-                    activeBallRef.current = null;
-                    setTimeout(() => {
-                        Composite.remove(engine.world, ball);
-                    }, 50);
-                }
+                Composite.remove(engine.world, ball);
+                activeBallRef.current = null;
             });
-        });
+        };
 
-        // 7. Start Loop
+        Events.on(engine, 'collisionStart', onCollisionStart);
+
+        const onAfterUpdate = () => {
+            const ball = activeBallRef.current;
+            if (!ball) return;
+
+            const outOfBounds = ball.position.y > height + 30 || ball.position.x < -30 || ball.position.x > width + 30;
+            const almostRest = ball.position.y > baseY - 10 && Math.abs(ball.velocity.x) < 0.12 && Math.abs(ball.velocity.y) < 0.12;
+
+            if (outOfBounds || almostRest) {
+                Composite.remove(engine.world, ball);
+                activeBallRef.current = null;
+                completeCallbackRef.current?.();
+            }
+        };
+
+        Events.on(engine, 'afterUpdate', onAfterUpdate);
+
         Render.run(render);
         const runner = Runner.create();
         runnerRef.current = runner;
         Runner.run(runner, engine);
 
-        // Cleanup
         return () => {
+            clearBall();
+            scoredBallRef.current.clear();
+            Events.off(engine, 'collisionStart', onCollisionStart);
+            Events.off(engine, 'afterUpdate', onAfterUpdate);
             Render.stop(render);
             Runner.stop(runner);
+            World.clear(engine.world, false);
             Engine.clear(engine);
-            render.canvas.remove();
+            if (render.canvas) {
+                render.canvas.remove();
+            }
+            if (render.textures) {
+                render.textures = {};
+            }
         };
+    }, [clearBall, containerRef, height, width]);
 
-    }, [width, height]); // Re-init on resize
-
-    // Launch Function
-    const launch = (angle, power) => {
+    const launch = useCallback((angle, power) => {
         if (!engineRef.current) return;
 
-        // Cleanup existing ball
-        if (activeBallRef.current) {
-            Matter.Composite.remove(engineRef.current.world, activeBallRef.current);
-        }
+        clearBall();
 
-        const isLeft = isLeftPlayer;
+        const isLeft = playerSideRef.current;
         const dir = isLeft ? 1 : -1;
 
-        // 1. Calculate Spawn Position (FROM THE RACK)
-        // Racks are visually at the bottom corners.
-        // Pivot point is at x=0 (Left Wall) and x=width (Right Wall).
-        // Rack Length is approx 180px in CSS.
-        // We want to spawn at the "Mouth" of the rack.
+        const clampedAngle = clamp(angle, 10, 80);
+        const clampedPower = clamp(power, 20, 100);
+        const angleRad = (clampedAngle * Math.PI) / 180;
 
-        // We need to account for the rotation angle.
-        // Angle is input in degrees (e.g. 10 to 80).
-        // Visual Rotation is -Angle (Left) or Angle (Right).
-        const launchAngleRad = (angle * Math.PI) / 180;
+        const pivotY = height - 32;
+        const pivotX = isLeft ? 0 : width;
+        const rackLength = Math.min(160, width * 0.2);
+        const ballRadius = 12;
 
-        // Spawn offset from pivot
-        // When angle is 0 (Flat): Spawn is at x=Length, y=PivotY (approx)
-        // When angle is 90 (Up): Spawn is at x=PivotX, y=PivotY - Length
+        const tipX = isLeft
+            ? pivotX + Math.cos(angleRad) * rackLength
+            : pivotX - Math.cos(angleRad) * rackLength;
+        const tipY = pivotY - Math.sin(angleRad) * rackLength;
 
-        const rackLength = 160; // Slightly less than visual 180 to avoid clipping
-        const pivotY = height - 20;
+        const spawnX = clamp(tipX + dir * 10, ballRadius + 4, width - ballRadius - 4);
+        const spawnY = clamp(tipY - 8, ballRadius + 4, height - 90);
 
-        let spawnX, spawnY;
-
-        if (isLeftPlayer) {
-            const pivotX = 0; // Left wall
-            spawnX = pivotX + Math.cos(launchAngleRad) * rackLength;
-            spawnY = pivotY - Math.sin(launchAngleRad) * rackLength;
-        } else {
-            const pivotX = width; // Right wall
-            spawnX = pivotX - Math.cos(launchAngleRad) * rackLength;
-            spawnY = pivotY - Math.sin(launchAngleRad) * rackLength;
-        }
-
-        // 2. Create Ball
-        const ball = Matter.Bodies.circle(spawnX, spawnY, 12, {
+        const ball = Matter.Bodies.circle(spawnX, spawnY, ballRadius, {
             label: 'ball',
-            restitution: 0.6,
-            friction: 0.001,
-            frictionAir: 0.005, // Moderate air resistance for parabola
-            density: 0.04,
+            restitution: 0.56,
+            friction: 0.005,
+            frictionAir: 0.012,
+            density: 0.03,
             collisionFilter: {
                 category: BALL_CATEGORY,
-                mask: WALL_CATEGORY | SENSOR_CATEGORY
+                mask: WALL_CATEGORY | SENSOR_CATEGORY,
             },
             render: {
-                fillStyle: isLeftPlayer ? '#FF7676' : '#1D2B44',
-                strokeStyle: '#fff',
-                lineWidth: 2
+                fillStyle: isLeft ? '#FF7676' : '#1D2B44',
+                strokeStyle: '#FFFFFF',
+                lineWidth: 2,
             }
         });
 
         activeBallRef.current = ball;
+        scoredBallRef.current.delete(ball.id);
         Matter.Composite.add(engineRef.current.world, ball);
 
-        // 3. Apply Velocity (PROJECTILE LAUNCH)
-        // Goal: Shoot UP and ACROSS.
-        // Input Angle (0-90) controls steepness.
-        // Power (0-100) controls distance/speed.
+        const speed = 7.8 + (clampedPower - 20) * 0.065;
+        const vx = Math.cos(angleRad) * speed * dir;
+        const vy = -Math.sin(angleRad) * speed * 1.16;
 
-        // Angle Logic: 
-        // 10 deg = Low Arc (Aim for Far side).
-        // 80 deg = High Arc (Aim for Near side).
-        // Standard projectile physics: 45 deg = Max Distance.
-
-        // Power scaling
-        // Need fairly high impulse to fight gravity (+1.2Y) and air friction.
-        const speedMultiplier = 0.55;
-        const launchSpeed = power * speedMultiplier;
-
-        // Velocity Components
-        // Launch is UP (-y) and ACROSS (dir * x)
-        const vx = Math.cos(launchAngleRad) * launchSpeed * dir;
-        const vy = -Math.sin(launchAngleRad) * launchSpeed * 1.5;
-
-        // Apply Force
         Matter.Body.setVelocity(ball, { x: vx, y: vy });
-
-        // Spin
-        Matter.Body.setAngularVelocity(ball, dir * 0.2);
-    };
+        Matter.Body.setAngularVelocity(ball, dir * 0.16);
+    }, [clearBall, height, width]);
 
     return {
-        launch
+        launch,
+        clearBall,
     };
 };

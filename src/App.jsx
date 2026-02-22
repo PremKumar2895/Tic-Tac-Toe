@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import GameLayout from './components/GameLayout';
 import PinballArena from './components/PinballArena';
 import TicTacToeBoard from './components/TicTacToeBoard';
 import './App.css';
 
-const WIN_COMMINATIONS = [
+const WIN_COMBINATIONS = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],
     [0, 3, 6], [1, 4, 7], [2, 5, 8],
     [0, 4, 8], [2, 4, 6]
@@ -23,7 +23,7 @@ function PlayerControls({ player, activePlayer, angle, setAngle, power, setPower
             <div className="control-group">
                 <div className="control-header">
                     <label>Angle</label>
-                    <span className={`val-display ${isPlayerO ? 'navy' : 'coral'}`}>{angle}Â°</span>
+                    <span className={`val-display ${isPlayerO ? 'navy' : 'coral'}`}>{angle}°</span>
                 </div>
                 <input
                     type="range"
@@ -75,91 +75,126 @@ function App() {
     const [powerO, setPowerO] = useState(65);
 
     const arenaRef = useRef(null);
+    const boardRef = useRef(board);
+    const turnRef = useRef(turn);
+    const winnerRef = useRef(winner);
+    const isLaunchingRef = useRef(isLaunching);
+    const shotResolvedRef = useRef(false);
+    const launchTimeoutRef = useRef(null);
 
-    // Helper: Pure win detection
-    const getWinner = (currentBoard) => {
-        for (let combo of WIN_COMMINATIONS) {
+    const getWinner = useCallback((currentBoard) => {
+        for (const combo of WIN_COMBINATIONS) {
             const [a, b, c] = combo;
             if (currentBoard[a] && currentBoard[a] === currentBoard[b] && currentBoard[a] === currentBoard[c]) {
                 return currentBoard[a];
             }
         }
+
         if (!currentBoard.includes(null)) return 'DRAW';
         return null;
-    };
+    }, []);
 
-    const handleBasketHit = (index) => {
-        // Guard: Physics might fire multiple collisions, but App only resolves if launching
-        if (winner || !isLaunching) return;
+    useEffect(() => {
+        boardRef.current = board;
+    }, [board]);
 
-        // 1. Determine if the cell is occupied
-        const isOccupied = board[index] !== null;
+    useEffect(() => {
+        turnRef.current = turn;
+    }, [turn]);
 
-        // 2. Prepare next board state
-        let nextBoard = board;
-        if (!isOccupied) {
-            nextBoard = [...board];
-            nextBoard[index] = turn;
-            setBoard(nextBoard);
+    useEffect(() => {
+        winnerRef.current = winner;
+    }, [winner]);
+
+    useEffect(() => {
+        isLaunchingRef.current = isLaunching;
+    }, [isLaunching]);
+
+    const clearLaunchTimeout = useCallback(() => {
+        if (launchTimeoutRef.current) {
+            clearTimeout(launchTimeoutRef.current);
+            launchTimeoutRef.current = null;
+        }
+    }, []);
+
+    const resolveShot = useCallback((bucketIndex = null) => {
+        if (winnerRef.current || !isLaunchingRef.current || shotResolvedRef.current) return;
+
+        shotResolvedRef.current = true;
+        clearLaunchTimeout();
+
+        const currentBoard = boardRef.current;
+        const activeTurn = turnRef.current;
+        const nextBoard = [...currentBoard];
+
+        if (Number.isInteger(bucketIndex) && bucketIndex >= 0 && bucketIndex < 9 && nextBoard[bucketIndex] === null) {
+            nextBoard[bucketIndex] = activeTurn;
         }
 
-        // 3. Resolve Turn / Winner
         const detectedWinner = getWinner(nextBoard);
+
+        setBoard(nextBoard);
+
         if (detectedWinner) {
             setWinner(detectedWinner);
         } else {
-            // Always switch turn if no winner, even if hit was on occupied cell
-            setTurn(prev => (prev === 'X' ? 'O' : 'X'));
+            setTurn(activeTurn === 'X' ? 'O' : 'X');
         }
 
-        // 4. Unlock Launch
         setIsLaunching(false);
-    };
+    }, [clearLaunchTimeout, getWinner]);
 
-    const resetGame = () => {
+    const handleBasketHit = useCallback((index) => {
+        resolveShot(index);
+    }, [resolveShot]);
+
+    const handleBallComplete = useCallback(() => {
+        resolveShot(null);
+    }, [resolveShot]);
+
+    const resetGame = useCallback(() => {
+        clearLaunchTimeout();
+        shotResolvedRef.current = false;
         setBoard(Array(9).fill(null));
         setTurn('X');
         setWinner(null);
         setIsLaunching(false);
-        // Physics state will be cleared by PinballArena internally
-    };
+        arenaRef.current?.clearBall?.();
+    }, [clearLaunchTimeout]);
 
-    // 5. Miss Timeout / Game Stuck Prevention
     useEffect(() => {
-        let timeout;
-        if (isLaunching) {
-            timeout = setTimeout(() => {
-                // Ball missed everything or flew out.
-                // Reset launch state. 
-                // Opt: Switch turn? Or let same player try again? 
-                // "ball in play for long time" implies failure.
-                // Let's reset to waiting state, but maybe keep turn?
-                // For game flow, if you miss, you lose turn usually.
-                setIsLaunching(false);
-                setTurn(prev => (prev === 'X' ? 'O' : 'X'));
-            }, 6000); // 6 seconds max flight time
-        }
-        return () => clearTimeout(timeout);
-    }, [isLaunching]);
+        clearLaunchTimeout();
+        if (!isLaunching) return;
 
-    const handleLaunch = () => {
+        launchTimeoutRef.current = setTimeout(() => {
+            resolveShot(null);
+        }, 4500);
+
+        return clearLaunchTimeout;
+    }, [isLaunching, resolveShot, clearLaunchTimeout]);
+
+    useEffect(() => () => {
+        clearLaunchTimeout();
+    }, [clearLaunchTimeout]);
+
+    const handleLaunch = useCallback(() => {
         if (arenaRef.current && !isLaunching && !winner) {
+            shotResolvedRef.current = false;
             setIsLaunching(true);
             const currentAngle = turn === 'X' ? angleX : angleO;
             const currentPower = turn === 'X' ? powerX : powerO;
             arenaRef.current.launch(currentAngle, currentPower);
         }
-    };
+    }, [angleO, angleX, isLaunching, powerO, powerX, turn, winner]);
 
     return (
         <GameLayout turn={turn}>
-            {/* 0: Header */}
             <header className="game-header">
                 <h1 className="main-title">TIC-TAC-PINBALL</h1>
                 <div className={`status-badge-container ${turn === 'O' ? 'status-o' : 'status-x'}`}>
                     <div className="status-pulse" />
                     <span className="status-text">
-                        {winner ? (winner === 'DRAW' ? "DRAW!" : `${winner} WINS!`) : `PLAYER ${turn}'S TURN`}
+                        {winner ? (winner === 'DRAW' ? 'DRAW!' : `${winner} WINS!`) : `PLAYER ${turn}'S TURN`}
                     </span>
                     {winner && (
                         <button className="new-game-btn" onClick={resetGame}>RESTART</button>
@@ -167,7 +202,6 @@ function App() {
                 </div>
             </header>
 
-            {/* 1: Left Controls */}
             <PlayerControls
                 player="X"
                 activePlayer={turn}
@@ -180,10 +214,8 @@ function App() {
                 isLaunching={isLaunching}
             />
 
-            {/* 2: Play Area */}
             <TicTacToeBoard board={board} />
 
-            {/* 3: Right Controls */}
             <PlayerControls
                 player="O"
                 activePlayer={turn}
@@ -196,11 +228,11 @@ function App() {
                 isLaunching={isLaunching}
             />
 
-            {/* 4: Footer Arena */}
             <PinballArena
                 ref={arenaRef}
                 activePlayer={winner ? null : turn}
                 onBasketHit={handleBasketHit}
+                onBallComplete={handleBallComplete}
                 board={board}
                 isLaunching={isLaunching}
                 angle={turn === 'X' ? angleX : angleO}

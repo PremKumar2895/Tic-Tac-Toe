@@ -1,85 +1,42 @@
 .game-layout-unified {
     display: flex;
     flex-direction: column;
-    width: 100%;
-    height: 100%;
     align-items: center;
+    width: min(100%, 1320px);
+    margin: 0 auto;
+    padding: 1.25rem 1rem 1rem;
+    position: relative;
+    z-index: 2;
 }
 
 .main-stage {
+    width: 100%;
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    width: 1200px;
-    /* Locked width */
-    height: 600px;
-    /* Locked play area height */
+    grid-template-columns: 1fr minmax(320px, 520px) 1fr;
     gap: 1rem;
     align-items: center;
-    flex: 0 0 auto;
-    padding: 0;
+    margin-bottom: clamp(0.4rem, 1.2vw, 1rem);
 }
 
 .side-content {
-    grid-column: span 3;
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;
 }
 
 .center-game-area {
-    grid-column: span 6;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-.diagonal-racks-layer {
-    position: absolute;
-    bottom: 120px;
-    width: 100%;
-    left: 0;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 4rem;
-    pointer-events: none;
-}
+@media (max-width: 1080px) {
+    .main-stage {
+        grid-template-columns: 1fr;
+        gap: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
 
-.diagonal-rack {
-    width: 200px;
-    height: 40px;
-    background: var(--sand);
-    border: 2px solid var(--sand-dark);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    box-shadow: inset 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-.rack-left {
-    --rotation: -35deg;
-    transform: rotate(var(--rotation));
-    justify-content: flex-end;
-}
-
-.rack-right {
-    --rotation: 35deg;
-    transform: rotate(var(--rotation));
-    justify-content: flex-start;
-}
-
-.rack-ball {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    margin: 0 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), inset -2px -2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.rack-ball.coral {
-    background: radial-gradient(circle at 30% 30%, #ff9e9e, var(--coral) 60%, #e66a6a);
-}
-
-.rack-ball.navy {
-    background: radial-gradient(circle at 30% 30%, #3a568a, var(--navy) 60%, #0d1421);
+    .side-content {
+        width: 100%;
+    }
 }

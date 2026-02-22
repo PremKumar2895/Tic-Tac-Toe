@@ -1,30 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-main: #FDF9E7;
-  --bg-panel: #FFFBF0;
-  --tile-bg: #F9EBD1;
-  --sand: #EFE3C8;
-  --sand-dark: #DCCBA5;
-  --coral: #FF7676;
-  --navy: #1D2B44;
-  --text-main: #2C2520;
+  --bg-main: #fdf9e7;
+  --bg-panel: #fffbf0;
+  --tile-bg: #f9ebd1;
+  --sand: #efe3c8;
+  --sand-dark: #dccba5;
+  --coral: #ff7676;
+  --navy: #1d2b44;
+  --text-main: #2c2520;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   font-family: 'Space Grotesk', sans-serif;
-  background-color: var(--bg-main);
   color: var(--text-main);
+  background-color: var(--bg-main);
   background-image: radial-gradient(var(--sand) 1px, transparent 1px);
   background-size: 40px 40px;
-  min-height: 100vh;
-  overflow: hidden;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  padding: 0.5rem;
 }
 
 h1,
@@ -34,7 +44,6 @@ h3,
   font-family: 'DM Serif Display', serif;
 }
 
-/* Custom Scrollbar if needed */
 ::-webkit-scrollbar {
   width: 8px;
 }

@@ -1,8 +1,7 @@
 import React from 'react';
 import './GameLayout.css';
 
-const GameLayout = ({ children, turn }) => {
-    // Expected children: [Header, LeftControls, PlayArea, RightControls, Footer]
+const GameLayout = ({ children }) => {
     const [header, leftControls, playArea, rightControls, footer] = children;
 
     return (
@@ -23,11 +22,8 @@ const GameLayout = ({ children, turn }) => {
                 </section>
             </main>
 
-            {/* <div className="diagonal-racks-layer">Moved to PinballArena</div> */}
-
             {footer}
 
-            {/* Background blobs */}
             <div className="bg-blobs">
                 <div className="blob blob-1" />
                 <div className="blob blob-2" />
