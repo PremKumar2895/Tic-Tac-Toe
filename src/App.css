@@ -6,6 +6,7 @@
 }
 
 .game-header {
+    position: relative;
     text-align: center;
     margin-bottom: 1.3rem;
     z-index: 3;
@@ -526,3 +527,34 @@
         transition: none !important;
     }
 }
+
+.copyright-badge {
+    position: fixed;
+    top: max(0.5rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    z-index: 1000;
+    pointer-events: none;
+    user-select: none;
+    font-size: clamp(0.58rem, 0.55rem + 0.2vw, 0.72rem);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: rgba(44, 37, 32, 0.68);
+    background: rgba(249, 235, 209, 0.66);
+    border: 1px solid rgba(220, 203, 165, 0.85);
+    border-radius: 999px;
+    padding: 0.22rem 0.58rem;
+    line-height: 1;
+    white-space: nowrap;
+    backdrop-filter: blur(1.5px);
+}
+
+@media (max-width: 640px) {
+    .copyright-badge {
+        top: max(0.45rem, env(safe-area-inset-top));
+        right: max(0.55rem, env(safe-area-inset-right));
+        padding: 0.2rem 0.5rem;
+    }
+}
+
+
+

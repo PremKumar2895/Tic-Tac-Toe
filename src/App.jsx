@@ -190,6 +190,7 @@ function App() {
     return (
         <GameLayout turn={turn}>
             <header className="game-header">
+                <div className="copyright-badge">@Copyrights @2026 PK</div>
                 <h1 className="main-title">TIC-TAC-PINBALL</h1>
                 <div className={`status-badge-container ${turn === 'O' ? 'status-o' : 'status-x'}`}>
                     <div className="status-pulse" />
@@ -242,3 +243,5 @@ function App() {
 }
 
 export default App;
+
+
